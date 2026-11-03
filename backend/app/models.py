@@ -1,8 +1,10 @@
 """Database tables.
 
-Essay 1 -- n Revision 1 -- n Issue
+User 1 -- n Essay 1 -- n Revision 1 -- n Issue
 Every submission of the text is a new Revision, so we keep the full history
 (which issues were found in which round) for later progress tracking.
+
+LoginSession, Invite and UsageLog support login, invite-only registration and cost limits.
 """
 
 from datetime import datetime, timezone
@@ -14,8 +16,58 @@ def utcnow() -> datetime:
     return datetime.now(timezone.utc)
 
 
+class User(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    # Google's stable account id ("sub" claim). Emails can change, this does not
+    google_sub: str = Field(unique=True, index=True)
+    email: str = Field(index=True)
+    name: str | None = None
+    is_admin: bool = False
+    created_at: datetime = Field(default_factory=utcnow)
+
+
+class LoginSession(SQLModel, table=True):
+    __tablename__ = "login_session"
+
+    id: int | None = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", index=True)
+    # SHA-256 of the cookie value, so a leaked database does not leak usable sessions
+    token_hash: str = Field(unique=True, index=True)
+    created_at: datetime = Field(default_factory=utcnow)
+    expires_at: datetime
+
+
+class Invite(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    code: str = Field(unique=True, index=True)
+    # Who it was meant for, as a reminder for the admin
+    note: str | None = None
+    created_at: datetime = Field(default_factory=utcnow)
+    used_by_id: int | None = Field(default=None, foreign_key="user.id")
+    used_at: datetime | None = None
+
+
+class UsageLog(SQLModel, table=True):
+    """One row per AI call, with its cost. Basis for the daily and monthly limits."""
+
+    __tablename__ = "usage_log"
+
+    id: int | None = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", index=True)
+    # One user action (a review or a dispute) can make several AI calls (leak retry)
+    request_id: str = Field(index=True)
+    kind: str  # "review" | "dispute"
+    model: str
+    input_tokens: int
+    output_tokens: int
+    cost_usd: float
+    created_at: datetime = Field(default_factory=utcnow, index=True)
+
+
 class Essay(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
+    # Nullable only for essays written before login existed (see `python -m app.admin assign-orphans`)
+    user_id: int | None = Field(default=None, foreign_key="user.id", index=True)
     topic: str
     # Snapshot of the difficulty modifiers active for this essay (see schemas.Modifiers)
     modifiers: dict = Field(default_factory=dict, sa_column=Column(JSON, nullable=False))

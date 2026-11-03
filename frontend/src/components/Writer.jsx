@@ -21,7 +21,8 @@ function modifierTags(m) {
   return tags.length ? tags : ["no modifiers"];
 }
 
-export default function Writer({ essay }) {
+// `onUsage`: called after an AI call, so the remaining daily checks can be refreshed
+export default function Writer({ essay, onUsage }) {
   const { modifiers } = essay;
   const [text, setText] = useState("");
   const [result, setResult] = useState(null); // last FeedbackOut from the backend
@@ -59,6 +60,7 @@ export default function Writer({ essay }) {
       setError(e.message);
     } finally {
       setLoading(false);
+      onUsage();
     }
   };
 
@@ -116,9 +118,9 @@ export default function Writer({ essay }) {
           {error && <p className="notice">Error: {error}</p>}
         </div>
 
-        <aside className="notes card">
+        <aside className={`notes card${result ? " has-feedback" : ""}`}>
           {result ? (
-            <Feedback result={result} onHighlight={setHighlight} fixedTotal={fixedTotal} />
+            <Feedback result={result} onHighlight={setHighlight} fixedTotal={fixedTotal} onUsage={onUsage} />
           ) : (
             <p className="empty-notes">
               Feedback will appear here after you submit. You will get questions, not answers.

@@ -1,0 +1,13 @@
+# Keep secrets, local data and build output out of the image
+**/.env
+**/.env.*
+!**/.env.example
+**/*.db
+**/.venv
+**/__pycache__
+**/.pytest_cache
+**/node_modules
+frontend/dist
+backend/tests
+deploy
+.git

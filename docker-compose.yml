@@ -1,0 +1,21 @@
+# Runs the whole app in one container.
+#   Locally:     docker compose up --build        -> http://localhost:8000
+#   On a server: see deploy/README.md (adds docker-compose.server.yml)
+services:
+  essay-coach:
+    build: .
+    restart: unless-stopped
+    env_file: backend/.env
+    environment:
+      # These always win over backend/.env inside the container
+      DATABASE_URL: sqlite:////data/essay_coach.db
+      COOKIE_SECURE: "true"
+      LOCAL_MODE: "false"
+    volumes:
+      - essay-data:/data
+    ports:
+      # Only reachable from this machine
+      - "127.0.0.1:8000:8000"
+
+volumes:
+  essay-data:

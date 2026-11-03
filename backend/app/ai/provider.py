@@ -5,7 +5,8 @@ can be swapped (or faked in tests) without touching routes or services.
 """
 
 import logging
-from typing import Protocol, TypeVar
+from dataclasses import dataclass
+from typing import Generic, Protocol, TypeVar
 
 import anthropic
 from pydantic import BaseModel
@@ -23,35 +24,46 @@ class AIServiceError(Exception):
     """The AI call failed or returned something unusable."""
 
 
+@dataclass
+class Completion(Generic[T]):
+    """Parsed output plus what the call cost in tokens (for the usage log)."""
+
+    output: T
+    # The model that actually answered (can differ from the requested one after a fallback)
+    model: str
+    input_tokens: int
+    output_tokens: int
+
+
 class AIProvider(Protocol):
-    def generate(self, *, system: str, user: str, output: type[T]) -> T:
+    def generate(self, *, system: str, user: str, output: type[T], model: str) -> Completion[T]:
         """Send one prompt and return the response parsed into `output`."""
         ...
 
 
 class AnthropicProvider:
-    def __init__(self, api_key: str, model: str, effort: str) -> None:
+    def __init__(self, api_key: str, effort: str) -> None:
         self._client = anthropic.Anthropic(api_key=api_key)
-        self._model = model
         self._effort = effort
 
-    def _fallback_params(self) -> dict:
+    @staticmethod
+    def _fallback_params(model: str) -> dict:
         """If the main model declines, the API retries on a fallback model in the same call.
         Only some models support it (Haiku does not), so it is left out for the others."""
-        if not self._model.startswith(_FALLBACK_MODEL_PREFIXES):
+        if not model.startswith(_FALLBACK_MODEL_PREFIXES):
             return {}
         return {"betas": ["server-side-fallback-2026-07-01"], "fallbacks": "default"}
 
-    def generate(self, *, system: str, user: str, output: type[T]) -> T:
+    def generate(self, *, system: str, user: str, output: type[T], model: str) -> Completion[T]:
         try:
             response = self._client.beta.messages.parse(
-                model=self._model,
+                model=model,
                 max_tokens=16000,
                 system=system,
                 messages=[{"role": "user", "content": user}],
                 output_format=output,
                 output_config={"effort": self._effort},
-                **self._fallback_params(),
+                **self._fallback_params(model),
             )
         except anthropic.AuthenticationError as e:
             raise AIServiceError("Invalid or missing ANTHROPIC_API_KEY") from e
@@ -68,7 +80,16 @@ class AnthropicProvider:
         if response.stop_reason == "max_tokens" or response.parsed_output is None:
             logger.error("Unusable AI response, request_id=%s", response._request_id)
             raise AIServiceError("The AI returned an incomplete response")
-        return response.parsed_output
+
+        usage = response.usage
+        # Cache tokens are counted as normal input: a slight overestimate, which is the safe side for a budget
+        input_tokens = usage.input_tokens + (usage.cache_creation_input_tokens or 0) + (usage.cache_read_input_tokens or 0)
+        return Completion(
+            output=response.parsed_output,
+            model=response.model,
+            input_tokens=input_tokens,
+            output_tokens=usage.output_tokens,
+        )
 
 
 _provider: AIProvider | None = None
@@ -81,9 +102,5 @@ def get_provider() -> AIProvider:
         settings = get_settings()
         if not settings.anthropic_api_key:
             raise AIServiceError("ANTHROPIC_API_KEY is not set (see backend/.env)")
-        _provider = AnthropicProvider(
-            api_key=settings.anthropic_api_key,
-            model=settings.anthropic_model,
-            effort=settings.anthropic_effort,
-        )
+        _provider = AnthropicProvider(api_key=settings.anthropic_api_key, effort=settings.anthropic_effort)
     return _provider

@@ -3,6 +3,8 @@ uvicorn[standard]==0.54.0
 sqlmodel==0.0.48
 pydantic-settings==2.16.1
 anthropic==2.3.0
+google-auth==2.62.1
+requests==2.34.2  # used by google-auth to fetch Google's signing keys
 
 # dev / tests
 pytest==9.2.0

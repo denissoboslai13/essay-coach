@@ -22,6 +22,8 @@
   --type: "Courier Prime", "Courier New", Courier, monospace;
   --sans: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
   --line: 28px;
+  /* Editor and feedback panel share one height, so the page doesn't grow with the feedback */
+  --workspace-height: calc(var(--line) * 22);
   --radius: 10px;
   --radius-sm: 6px;
   --shadow: 0 1px 2px rgba(60, 45, 20, 0.06), 0 6px 20px rgba(60, 45, 20, 0.07);
@@ -340,7 +342,7 @@ input[type="number"] {
    Both must share exactly the same font, padding and wrapping so the text lines up. */
 .editor {
   position: relative;
-  height: calc(var(--line) * 22);
+  height: var(--workspace-height);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
 }
@@ -398,6 +400,12 @@ input[type="number"] {
 
 .notes {
   padding: 20px;
+}
+
+/* Small while empty; once there is feedback, as tall as the editor and scrollable */
+.notes.has-feedback {
+  height: var(--workspace-height);
+  overflow-y: auto;
 }
 
 .notes-head {
@@ -649,4 +657,81 @@ input[type="number"] {
 
 .footer {
   margin-top: 28px;
+}
+
+/* --- Account bar and sign-in ------------------------------------------- */
+
+.brand {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.account {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: #c9c1b0;
+}
+
+.account .quota {
+  font: 700 12px var(--type);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #f6f1e6;
+}
+
+.masthead button.link {
+  color: #c9c1b0;
+}
+
+.masthead button.link:hover {
+  color: #fff;
+}
+
+.login {
+  max-width: 480px;
+  margin: 24px auto 0;
+}
+
+.login .card {
+  padding: 28px;
+}
+
+.login h2 {
+  font: 700 26px var(--type);
+  margin-bottom: 8px;
+}
+
+.login .lead {
+  margin: 0 0 22px;
+  color: var(--ink-soft);
+}
+
+.google-button {
+  min-height: 44px;
+}
+
+.invite-form p {
+  margin: 0 0 10px;
+}
+
+.invite-form div {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.invite-form input {
+  flex: 1;
+  min-width: 0;
+}
+
+.invite-form input {
+  font: 700 16px var(--type);
+  letter-spacing: 2px;
+  text-transform: uppercase;
 }

@@ -1,0 +1,21 @@
+# One Cloudflare tunnel for every project on the server. It lives outside the projects:
+# copy this folder to the server (e.g. ~/infra/cloudflared) and run it once.
+#   docker network create web
+#   echo "TUNNEL_TOKEN=..." > .env
+#   docker compose up -d
+# Each project joins the "web" network; hostnames are mapped in the Cloudflare dashboard,
+# e.g. essaycoach.example.com -> http://essay-coach:8000
+services:
+  cloudflared:
+    # Pin a specific version when deploying: https://hub.docker.com/r/cloudflare/cloudflared/tags
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN}
+    networks:
+      - web
+
+networks:
+  web:
+    external: true

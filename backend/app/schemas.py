@@ -141,3 +141,38 @@ class EssayOut(BaseModel):
     completed: bool
     created_at: datetime
     revisions: list[RevisionOut]
+
+
+# --- Login ----------------------------------------------------------------
+
+
+class AuthConfigOut(BaseModel):
+    """Public settings the login screen needs."""
+
+    google_client_id: str
+
+
+class GoogleLogin(BaseModel):
+    # ID token from Google Identity Services (a signed JWT)
+    credential: str = Field(min_length=1, max_length=4096)
+    # Needed only the first time an account signs in
+    invite_code: str | None = Field(default=None, max_length=64)
+
+
+class QuotaOut(BaseModel):
+    """What is left today. `None` = no daily limit (admin)."""
+
+    reviews_left: int | None
+    daily_reviews: int
+    disputes_left: int | None
+    daily_disputes: int
+    budget_reached: bool
+
+
+class MeOut(BaseModel):
+    email: str
+    name: str | None
+    is_admin: bool
+    # LOCAL_MODE: no login, so the frontend hides "Sign out"
+    local_mode: bool
+    quota: QuotaOut

@@ -1,0 +1,13 @@
+# Server only, on top of docker-compose.yml:
+#   docker compose -f docker-compose.yml -f docker-compose.server.yml up -d --build
+# No published port: the shared Cloudflare tunnel reaches the app over the "web" network.
+services:
+  essay-coach:
+    ports: !reset []
+    networks:
+      - default
+      - web
+
+networks:
+  web:
+    external: true

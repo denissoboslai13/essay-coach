@@ -1,4 +1,4 @@
-# Secrets
+# Secrets (API key, Google client id, tunnel token)
 .env
 .env.*
 !.env.example
@@ -9,9 +9,20 @@ __pycache__/
 .venv/
 .pytest_cache/
 
-# Local data
+# Local data: databases (with essays and emails), their copies and backups
 *.db
+*.db-journal
+*.sqlite
+*.bak
 
 # Frontend
 node_modules/
 dist/
+
+# Logs
+*.log
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store

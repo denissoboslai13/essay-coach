@@ -21,10 +21,18 @@ FIXTURE = json.loads((Path(__file__).parent / "fixtures" / "film_evening.json").
 pytestmark = pytest.mark.skipif(not get_settings().anthropic_api_key, reason="ANTHROPIC_API_KEY not set")
 
 
+class LiveAI:
+    """The real provider with ANTHROPIC_MODEL, without limits or usage logging.
+    To try another model: ANTHROPIC_MODEL=claude-haiku-5-5 pytest tests/test_live.py -s"""
+
+    def generate(self, *, system, user, output):
+        return get_provider().generate(system=system, user=user, output=output, model=get_settings().anthropic_model).output
+
+
 def review(text: str, modifiers: Modifiers = Modifiers()) -> AIFeedback:
     settings = get_settings()
     return generate_feedback(
-        get_provider(),
+        LiveAI(),
         prompts.feedback_system_prompt(modifiers, settings.max_issues_per_round),
         prompts.feedback_user_prompt(FIXTURE["topic"], text),
         [text],
@@ -82,12 +90,12 @@ TRAVEL_ESSAY = (
 
 def explain(passage: str, problem: str, comment: str) -> AIRuleExplanation:
     user = prompts.dispute_user_prompt("Describe a memorable trip.", TRAVEL_ESSAY, passage, problem, comment)
-    return generate_explanation(get_provider(), user, [TRAVEL_ESSAY, comment])
+    return generate_explanation(LiveAI(), user, [TRAVEL_ESSAY, comment])
 
 
 def test_spelling_hint_does_not_spell_the_word():
     feedback = generate_feedback(
-        get_provider(),
+        LiveAI(),
         prompts.feedback_system_prompt(Modifiers(), 5),
         prompts.feedback_user_prompt("Describe a memorable trip.", TRAVEL_ESSAY),
         [TRAVEL_ESSAY],
@@ -140,6 +148,6 @@ def test_dispute_style_preference_is_dismissed():
         "so this word combination sounds slightly unnatural.",
         "I don't think that's a mistake.",
     )
-    result = generate_explanation(get_provider(), user, [essay])
+    result = generate_explanation(LiveAI(), user, [essay])
     print(f"\n{result.verdict=}\n{result.explanation}")
     assert result.verdict != "error"

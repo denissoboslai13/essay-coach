@@ -76,7 +76,7 @@ Included:
 4. Revise and resubmit loop until no issues are found.
 5. Save each essay with its modifiers and the issues found, to prepare for later progress tracking.
 
-Not in the prototype: skills map, accounts and login, mobile app, other languages, other text types, gamification.
+Not in the prototype: skills map, mobile app, other languages, other text types, gamification. (Accounts and login were added later, see "Deployment".)
 
 ## Later ideas (do not build now)
 
@@ -85,15 +85,17 @@ Not in the prototype: skills map, accounts and login, mobile app, other language
 - Web app and a real mobile app.
 - Other languages, other levels.
 
-## Deployment plan (decided, not built yet)
+## Deployment (built, server not available yet)
 
-For the final project, after the prototype: invite-only public version hosted on the user's own home server (not available yet).
+For the final project: invite-only public version on the user's own home server. The user will buy a domain and host several projects on the server.
 
-- Login with Google OAuth only (no passwords stored), registration needs an invite code.
-- Every endpoint checks that the essay/issue belongs to the logged-in user.
-- Per-user daily limit and a global monthly spending cap, based on logged token usage.
-- Docker Compose; exposed through a tunnel (no open ports). Domain/tunnel choice still open.
-- Auth, quotas and Docker can be built and tested locally before the server exists. Ask before starting.
+- Login with Google only (ID token verified in the backend, no passwords stored). New accounts need an invite code; emails in `ADMIN_EMAILS` don't, and have no daily limits.
+- Session = random token in an httpOnly cookie, stored hashed in the DB.
+- `LOCAL_MODE=true` (default in `.env.example`, for anyone who clones the repo and runs it with their own key): no login, one fixed local account, no daily limits; it takes over essays without an owner. Docker forces it off; the server refuses to start with it plus `COOKIE_SECURE`.
+- Every endpoint checks that the essay/issue belongs to the signed-in user (others get 404).
+- Every AI call is logged with tokens and price (`services/usage.py`). Per-user daily limits on reviews and disputes, global monthly budget for everyone.
+- Docker: one image (backend serves the built frontend, `app/site.py`). One shared Cloudflare tunnel on the server for all projects, via the `web` Docker network. See `deploy/README.md`.
+- Still to do before going public: backups, privacy page, account deletion.
 
 ## Architecture
 

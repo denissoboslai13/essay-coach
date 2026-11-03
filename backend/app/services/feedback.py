@@ -3,11 +3,11 @@
 from sqlmodel import Session
 
 from app.ai import prompts
-from app.ai.provider import AIProvider
 from app.config import get_settings
 from app.models import Essay, Issue, Revision
 from app.schemas import AIFeedback, AIRuleExplanation, FeedbackOut, IssueOut, Modifiers, RevisionOut
 from app.services.leak_guard import find_leaks
+from app.services.usage import MeteredAI
 
 GENERIC_QUESTION = "Read this passage again slowly. What looks wrong to you, and why?"
 
@@ -48,7 +48,7 @@ def _normalize(text: str) -> str:
     return " ".join(text.lower().split())
 
 
-def generate_feedback(provider: AIProvider, system: str, user: str, sources: list[str]) -> AIFeedback:
+def generate_feedback(provider: MeteredAI, system: str, user: str, sources: list[str]) -> AIFeedback:
     """AI feedback that has passed the leak check (one retry, then scrub)."""
     feedback = provider.generate(system=system, user=user, output=AIFeedback)
     if leaks := _feedback_leaks(feedback, sources):
@@ -57,7 +57,7 @@ def generate_feedback(provider: AIProvider, system: str, user: str, sources: lis
     return feedback
 
 
-def generate_explanation(provider: AIProvider, user: str, sources: list[str]) -> AIRuleExplanation:
+def generate_explanation(provider: MeteredAI, user: str, sources: list[str]) -> AIRuleExplanation:
     """Dispute explanation that has passed the leak check (one retry, then a neutral text)."""
     result = provider.generate(system=prompts.DISPUTE_SYSTEM, user=user, output=AIRuleExplanation)
     if leaks := find_leaks(result.explanation, sources):
@@ -79,7 +79,7 @@ def _overlaps_dismissed(passage: str, dismissed: list[Issue]) -> bool:
     return any((d := _normalize(i.passage)) in p or p in d for i in dismissed)
 
 
-def review_revision(session: Session, provider: AIProvider, essay: Essay, text: str) -> FeedbackOut:
+def review_revision(session: Session, provider: MeteredAI, essay: Essay, text: str) -> FeedbackOut:
     """Check a new version of the essay. Every submission is reviewed from scratch."""
     settings = get_settings()
     words = count_words(text)
@@ -160,7 +160,7 @@ def review_revision(session: Session, provider: AIProvider, essay: Essay, text: 
     )
 
 
-def explain_disputed_issue(session: Session, provider: AIProvider, issue: Issue, comment: str | None) -> Issue:
+def explain_disputed_issue(session: Session, provider: MeteredAI, issue: Issue, comment: str | None) -> Issue:
     """User says "I don't think that is an error": explain the rule and judge who is right."""
     revision = issue.revision
     user = prompts.dispute_user_prompt(revision.essay.topic, revision.text, issue.passage, issue.problem, comment)

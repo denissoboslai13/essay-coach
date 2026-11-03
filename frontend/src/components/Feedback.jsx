@@ -24,7 +24,7 @@ function Congratulations({ rounds, fixedTotal }) {
 }
 
 // `fixedTotal`: number of issues confirmed as fixed across all rounds of this essay
-export default function Feedback({ result, onHighlight, fixedTotal }) {
+export default function Feedback({ result, onHighlight, fixedTotal, onUsage }) {
   if (result.status === "too_short" || result.status === "too_long") {
     return <p className="notice">{result.message}</p>;
   }
@@ -50,7 +50,7 @@ export default function Feedback({ result, onHighlight, fixedTotal }) {
           </p>
           <ul className="issues">
             {revision.issues.map((issue, i) => (
-              <IssueItem key={issue.id} number={i + 1} issue={issue} onHighlight={onHighlight} />
+              <IssueItem key={issue.id} number={i + 1} issue={issue} onHighlight={onHighlight} onUsage={onUsage} />
             ))}
           </ul>
         </>
@@ -87,7 +87,7 @@ function SinceLastRound({ previous }) {
   );
 }
 
-function IssueItem({ number, issue: initialIssue, onHighlight }) {
+function IssueItem({ number, issue: initialIssue, onHighlight, onUsage }) {
   const [issue, setIssue] = useState(initialIssue);
   const [showForm, setShowForm] = useState(false);
   const [comment, setComment] = useState("");
@@ -104,6 +104,7 @@ function IssueItem({ number, issue: initialIssue, onHighlight }) {
       setError(e.message);
     } finally {
       setLoading(false);
+      onUsage();
     }
   };
 
