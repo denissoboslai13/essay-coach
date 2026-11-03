@@ -1,3 +1,5 @@
+from collections.abc import Iterator
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 
@@ -7,21 +9,23 @@ from app.config import get_settings
 from app.db import get_session
 from app.models import Essay, Issue, User
 from app.schemas import DisputeCreate, EssayCreate, EssayOut, FeedbackOut, IssueOut, RevisionCreate
-from app.services import feedback
+from app.services import feedback, usage
 from app.services.usage import MeteredAI
 
 router = APIRouter(tags=["essays"])
 
 
 def _metered(kind: str):
-    """Dependency: the AI provider wrapped with the limits and usage log of the current user."""
+    """Dependency: the AI provider wrapped with the limits and usage log of the current user.
+    Held for the whole request, so one user can't run several AI actions at once."""
 
     def dependency(
         session: Session = Depends(get_session),
         user: User = Depends(get_current_user),
         provider: AIProvider = Depends(get_provider),
-    ) -> MeteredAI:
-        return MeteredAI(provider, session, user, kind)
+    ) -> Iterator[MeteredAI]:
+        with usage.one_action_at_a_time(user.id):
+            yield MeteredAI(provider, session, user, kind)
 
     return dependency
 

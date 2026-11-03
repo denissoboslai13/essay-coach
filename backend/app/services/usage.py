@@ -5,6 +5,9 @@ Limits:
 - for the whole app and month: total spend in USD (applies to everyone, admins too)
 """
 
+import threading
+from collections.abc import Iterator
+from contextlib import contextmanager
 from datetime import datetime
 from typing import TypeVar
 from uuid import uuid4
@@ -83,6 +86,25 @@ def check_quota(session: Session, user: User, kind: str) -> None:
     limit = daily_limit(kind)
     if not user.is_admin and actions_today(session, user.id, kind) >= limit:
         raise QuotaExceeded(f"You have used all {limit} {ACTION_NOUNS[kind]} for today. Come back tomorrow.")
+
+
+_busy_users: set[int] = set()
+_busy_lock = threading.Lock()
+
+
+@contextmanager
+def one_action_at_a_time(user_id: int) -> Iterator[None]:
+    """Without this, many requests sent at once would all pass the daily limit check before
+    the first one is logged. Works within one process (the Docker image runs one)."""
+    with _busy_lock:
+        if user_id in _busy_users:
+            raise QuotaExceeded("Another check is still running. Wait for it to finish, then try again.")
+        _busy_users.add(user_id)
+    try:
+        yield
+    finally:
+        with _busy_lock:
+            _busy_users.discard(user_id)
 
 
 def remaining_today(session: Session, user: User, kind: str) -> int | None:

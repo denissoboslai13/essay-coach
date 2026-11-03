@@ -91,7 +91,8 @@ For the final project: invite-only public version on the user's own home server.
 
 - Login with Google only (ID token verified in the backend, no passwords stored). New accounts need an invite code; emails in `ADMIN_EMAILS` don't, and have no daily limits.
 - Session = random token in an httpOnly cookie, stored hashed in the DB.
-- `LOCAL_MODE=true` (default in `.env.example`, for anyone who clones the repo and runs it with their own key): no login, one fixed local account, no daily limits; it takes over essays without an owner. Docker forces it off; the server refuses to start with it plus `COOKIE_SECURE`.
+- `LOCAL_MODE=true` (default in `.env.example`, for anyone who clones the repo and runs it with their own key): no login, one fixed local account, no daily limits; it takes over essays without an owner. It only answers requests from localhost (Host header and loopback client), so a tunnel or public server can't reach it. Docker forces it off; the server refuses to start with it plus `COOKIE_SECURE`, and `app/site.py` refuses it entirely.
+- One AI action at a time per user (in-process lock), so parallel requests can't slip past the daily limit. Relies on a single worker process.
 - Every endpoint checks that the essay/issue belongs to the signed-in user (others get 404).
 - Every AI call is logged with tokens and price (`services/usage.py`). Per-user daily limits on reviews and disputes, global monthly budget for everyone.
 - Docker: one image (backend serves the built frontend, `app/site.py`). One shared Cloudflare tunnel on the server for all projects, via the `web` Docker network. See `deploy/README.md`.

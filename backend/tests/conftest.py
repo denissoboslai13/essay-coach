@@ -91,6 +91,12 @@ def anon_client(engine, provider: FakeProvider):
 
 
 @pytest.fixture
+def local_client(anon_client) -> TestClient:
+    """Not signed in, but a browser on this machine (what LOCAL_MODE accepts)."""
+    return TestClient(app, base_url="http://localhost:5173", client=("127.0.0.1", 50000))
+
+
+@pytest.fixture
 def make_client(engine, anon_client):
     """Factory: a new client signed in as a new user (overrides are shared with `anon_client`)."""
 

@@ -11,6 +11,9 @@ from app.config import get_settings
 from app.main import app as api
 from app.main import lifespan
 
+if get_settings().local_mode:
+    raise RuntimeError("LOCAL_MODE (no login) is for running it on your own machine, not for the production entry point.")
+
 # A mounted app's lifespan does not run, so the outer app runs it
 site = FastAPI(lifespan=lifespan, docs_url=None, redoc_url=None, openapi_url=None)
 site.mount("/api", api)

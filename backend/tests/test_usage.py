@@ -83,6 +83,30 @@ def test_daily_review_limit(client, provider, settings):
     assert client.get("/auth/me").json()["quota"]["reviews_left"] == 0
 
 
+def test_one_ai_action_at_a_time_per_user(client, make_client, provider, settings, engine):
+    from app.models import User
+    from app.services.usage import one_action_at_a_time
+
+    essay_id = new_essay(client)
+    with Session(engine) as session:
+        user_id = session.exec(select(User.id).where(User.email == "learner@example.com")).one()
+
+    # While one action of this user is running, a second one (e.g. sent in parallel) is refused
+    with one_action_at_a_time(user_id):
+        r = review(client, essay_id)
+        assert r.status_code == 429
+        assert "still running" in r.json()["detail"]
+        # Other users are not blocked
+        provider.responses.append(make_feedback(1))
+        other = make_client("other@example.com")
+        assert review(other, new_essay(other)).status_code == 200
+    assert len(provider.calls) == 1
+
+    # Released afterwards, also after the refused request
+    provider.responses.append(make_feedback(1))
+    assert review(client, essay_id).status_code == 200
+
+
 def test_too_short_text_does_not_count(client, provider, settings):
     essay_id = new_essay(client)
     for _ in range(3):

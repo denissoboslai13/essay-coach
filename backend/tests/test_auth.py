@@ -133,21 +133,21 @@ def test_session_token_is_stored_hashed(client, engine):
     assert stored != token and len(stored) == 64
 
 
-def test_local_mode_needs_no_login(anon_client, monkeypatch, provider, engine):
+def test_local_mode_needs_no_login(local_client, monkeypatch, provider, engine):
     monkeypatch.setattr(get_settings(), "local_mode", True)
     # Admin emails are for the hosted version; local mode doesn't use them
     monkeypatch.setattr(get_settings(), "admin_emails", "owner@example.com")
-    me = anon_client.get("/auth/me").json()
+    me = local_client.get("/auth/me").json()
     assert (me["email"], me["is_admin"], me["local_mode"]) == (auth.LOCAL_EMAIL, True, True)
 
     provider.responses.append(make_feedback(1))
-    essay_id = anon_client.post("/essays", json={"topic": "A school film evening"}).json()["id"]
-    assert anon_client.post(f"/essays/{essay_id}/revisions", json={"text": ESSAY_TEXT}).status_code == 200
+    essay_id = local_client.post("/essays", json={"topic": "A school film evening"}).json()["id"]
+    assert local_client.post(f"/essays/{essay_id}/revisions", json={"text": ESSAY_TEXT}).status_code == 200
     # Always the same single account
     assert [u.email for u in users(engine)] == [auth.LOCAL_EMAIL]
 
 
-def test_local_mode_takes_over_essays_without_owner(anon_client, monkeypatch, engine):
+def test_local_mode_takes_over_essays_without_owner(local_client, monkeypatch, engine):
     from app.models import Essay
 
     with Session(engine) as session:
@@ -155,7 +155,28 @@ def test_local_mode_takes_over_essays_without_owner(anon_client, monkeypatch, en
         session.commit()
 
     monkeypatch.setattr(get_settings(), "local_mode", True)
-    assert [e["topic"] for e in anon_client.get("/essays").json()] == ["Written before login existed"]
+    assert [e["topic"] for e in local_client.get("/essays").json()] == ["Written before login existed"]
+
+
+@pytest.mark.parametrize(
+    "base_url,client_ip",
+    [
+        # A tunnel to the laptop: the connection is local, but the Host is public
+        ("https://random-words.trycloudflare.com", "127.0.0.1"),
+        # Backend started directly on a public server: someone fakes Host: localhost
+        ("http://localhost:8000", "203.0.113.7"),
+    ],
+)
+def test_local_mode_is_not_reachable_from_outside(anon_client, monkeypatch, engine, base_url, client_ip):
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+
+    monkeypatch.setattr(get_settings(), "local_mode", True)
+    outsider = TestClient(app, base_url=base_url, client=(client_ip, 50000))
+    assert outsider.get("/auth/me").status_code == 403
+    assert outsider.post("/essays", json={"topic": "Free AI on someone's key"}).status_code == 403
+    assert users(engine) == []
 
 
 def test_local_mode_is_off_by_default(anon_client):

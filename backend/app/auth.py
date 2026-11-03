@@ -8,6 +8,7 @@ LOCAL_MODE (running it on your own machine) skips all of this: every request bel
 """
 
 import hashlib
+import ipaddress
 import secrets
 from datetime import timedelta
 
@@ -29,6 +30,7 @@ INVITE_REQUIRED = "invite_required"
 # The single account used in LOCAL_MODE ("local" can never be a real Google id)
 LOCAL_SUB = "local"
 LOCAL_EMAIL = "local@localhost"
+LOCAL_HOSTNAMES = {"localhost", "127.0.0.1", "::1"}
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -94,9 +96,23 @@ def local_user(session: Session) -> User:
     return user
 
 
+def is_local_request(request: Request) -> bool:
+    """True only for a browser on this machine. A tunnel or a public server sends another Host,
+    and a direct connection from outside has a non-loopback client address."""
+    if request.url.hostname not in LOCAL_HOSTNAMES or request.client is None:
+        return False
+    try:
+        return ipaddress.ip_address(request.client.host).is_loopback
+    except ValueError:
+        return False
+
+
 def get_current_user(request: Request, session: Session = Depends(get_session)) -> User:
     """FastAPI dependency for every endpoint that needs a signed-in user."""
     if get_settings().local_mode:
+        # Local mode means no login and no limits on the owner's key, so it must never be reachable from outside
+        if not is_local_request(request):
+            raise HTTPException(status_code=403, detail="Local mode only works on localhost.")
         return local_user(session)
     token = request.cookies.get(SESSION_COOKIE)
     if token:
