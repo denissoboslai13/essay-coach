@@ -1,0 +1,21 @@
+{
+  "topic": "Write a report about an event at your school or workplace.",
+  "text": "Report on the School Film Evening\n\nThe purpose of this report is to describe the film evening which was organised in our school last friday. Over 80 students was present in the main hall. The evening started at 6 pm and the film was began at half past six.\n\nStudents could choosed between two films: a comedy and a documentary about the ocean. Most of people voted for the comedy, so it was showed. The atmosphere was very good, everybody were laughing during the whole film.\n\nHowever, there was some problems. Firstly, the sound was to quiet for the students in the back. Secondly the snacks run out after only twenty minutes, what made some students angry.\n\nIn conclusion, the evening was a success and I recommend to organise it again. Next time, we should buy more snacks and check the sound system before. In my opinion, it would be also good to let students to choose the film earlier.",
+  "errors": [
+    {"passage": "last friday", "type": "conventions", "correct_form": "Friday"},
+    {"passage": "Over 80 students was present", "type": "grammar", "correct_form": "were present"},
+    {"passage": "the film was began", "type": "grammar", "correct_form": "began"},
+    {"passage": "Students could choosed", "type": "grammar", "correct_form": "could choose"},
+    {"passage": "Most of people voted", "type": "phraseology", "correct_form": "Most people"},
+    {"passage": "so it was showed", "type": "grammar", "correct_form": "was shown"},
+    {"passage": "The atmosphere was very good, everybody were laughing", "type": "syntax", "correct_form": "good; everybody"},
+    {"passage": "everybody were laughing", "type": "grammar", "correct_form": "everybody was laughing"},
+    {"passage": "there was some problems", "type": "grammar", "correct_form": "there were some problems"},
+    {"passage": "the sound was to quiet", "type": "conventions", "correct_form": "too quiet"},
+    {"passage": "Secondly the snacks", "type": "conventions", "correct_form": "Secondly,"},
+    {"passage": "the snacks run out", "type": "grammar", "correct_form": "ran out"},
+    {"passage": "what made some students angry", "type": "grammar", "correct_form": "which made"},
+    {"passage": "I recommend to organise it again", "type": "phraseology", "correct_form": "recommend organising"},
+    {"passage": "let students to choose the film", "type": "grammar", "correct_form": "let students choose"}
+  ]
+}
