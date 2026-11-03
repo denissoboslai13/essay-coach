@@ -1,4 +1,3 @@
-```markdown
 # Essay Coach
 
 **An aid, not a shortcut.** Essay Coach helps self-taught English learners get better at writing essays _themselves_. It never writes or rewrites your text. It points to a passage, says what the problem is, and asks a guiding question, so **you** find and make the fix.
@@ -60,6 +59,7 @@ The active modifiers are stored with every essay, so progress can later be compa
 | Tests    | pytest with a fake AI provider. Optional live tests against the real API with a fixture essay that has 15 known errors                |
 
 ### Architecture
+
 ```
 
 browser (React) -> own backend (FastAPI) -> Anthropic API
@@ -86,7 +86,7 @@ tests/ pytest, fixtures/film_evening.json
 frontend/
 src/ React components, styles.css
 
-````
+```
 
 ---
 
@@ -103,7 +103,7 @@ python -m venv .venv
 pip install -r requirements.txt
 copy .env.example .env      # put your key into ANTHROPIC_API_KEY
 uvicorn app.main:app --reload
-````
+```
 
 **Frontend** (second terminal)
 
@@ -167,7 +167,3 @@ Goal: by the final project deadline, run Essay Coach on a home server so invited
 - Paste lock on or off by default?
 - How to compare progress when modifiers change between essays?
 - Keep a numeric score at all, or would it make users chase the number?
-
-```
-
-```
