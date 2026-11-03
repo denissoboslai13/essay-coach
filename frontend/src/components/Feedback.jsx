@@ -10,8 +10,7 @@ const VERDICTS = {
 function Congratulations({ rounds, fixedTotal }) {
   return (
     <div className="congrats">
-      <div className="done-icon" aria-hidden="true">✓</div>
-      <h4>No issues left</h4>
+      <div className="stamp">Well done!</div>
       {rounds === 1 ? (
         <p>No problems found on the first try. That is a really clean essay.</p>
       ) : (
@@ -117,8 +116,8 @@ function IssueItem({ number, issue: initialIssue, onHighlight }) {
       onFocus={() => onHighlight(issue.passage)}
       onBlur={() => onHighlight(null)}
     >
-      <span className="num">{number}</span>
-      <span className="category-chip">{issue.category}</span>
+      <span className="num">{String(number).padStart(2, "0")}</span>
+      <span className="category-tag">{issue.category}</span>
       <p className="passage">{issue.passage}</p>
       <p>{issue.problem}</p>
       <p className="question">{issue.question}</p>

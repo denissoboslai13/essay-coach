@@ -85,6 +85,16 @@ Not in the prototype: skills map, accounts and login, mobile app, other language
 - Web app and a real mobile app.
 - Other languages, other levels.
 
+## Deployment plan (decided, not built yet)
+
+For the final project, after the prototype: invite-only public version hosted on the user's own home server (not available yet).
+
+- Login with Google OAuth only (no passwords stored), registration needs an invite code.
+- Every endpoint checks that the essay/issue belongs to the logged-in user.
+- Per-user daily limit and a global monthly spending cap, based on logged token usage.
+- Docker Compose; exposed through a tunnel (no open ports). Domain/tunnel choice still open.
+- Auth, quotas and Docker can be built and tested locally before the server exists. Ask before starting.
+
 ## Architecture
 
 - Frontend never calls a public AI API directly. Request goes frontend -> own backend -> AI API. The backend validates the request, keeps the API key, and can rate-limit.
