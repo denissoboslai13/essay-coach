@@ -33,6 +33,9 @@ export const loginWithGoogle = (credential, inviteCode = null) =>
 
 export const logout = () => request("/auth/logout", { method: "POST" });
 
+export const deleteAccount = (confirmEmail) =>
+  request("/auth/me", { method: "DELETE", body: JSON.stringify({ confirm_email: confirmEmail }) });
+
 export const getTopics = (harder) => request(`/topics?harder=${harder}`);
 
 export const createEssay = (topic, modifiers) => post("/essays", { topic, modifiers });

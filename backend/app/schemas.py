@@ -146,10 +146,15 @@ class EssayOut(BaseModel):
 # --- Login ----------------------------------------------------------------
 
 
+class AccountDelete(BaseModel):
+    confirm_email: str = Field(max_length=320)
+
+
 class AuthConfigOut(BaseModel):
     """Public settings the login screen needs."""
 
     google_client_id: str
+    privacy_contact: str
 
 
 class GoogleLogin(BaseModel):

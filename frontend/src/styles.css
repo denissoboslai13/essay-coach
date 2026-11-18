@@ -190,6 +190,7 @@ input[type="checkbox"] {
 }
 
 input[type="number"],
+input[type="email"],
 input[type="text"] {
   font: 15px var(--sans);
   padding: 7px 10px;
@@ -199,6 +200,7 @@ input[type="text"] {
 }
 
 input[type="number"]:focus,
+input[type="email"]:focus,
 input[type="text"]:focus {
   outline: none;
   border-color: var(--ink);
@@ -684,11 +686,11 @@ input[type="number"] {
   color: #f6f1e6;
 }
 
-.masthead button.link {
+.masthead .link {
   color: #c9c1b0;
 }
 
-.masthead button.link:hover {
+.masthead .link:hover {
   color: #fff;
 }
 
@@ -734,4 +736,97 @@ input[type="number"] {
   font: 700 16px var(--type);
   letter-spacing: 2px;
   text-transform: uppercase;
+}
+
+/* --- Privacy page and account deletion --------------------------------- */
+
+.site-footer {
+  border-top: 1px solid var(--border);
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 16px 24px 28px;
+  text-align: center;
+  font-size: 13px;
+}
+
+.site-footer a,
+.privacy a {
+  color: var(--ink-soft);
+  text-underline-offset: 3px;
+}
+
+.privacy {
+  max-width: 720px;
+  margin: 8px auto 0;
+}
+
+.privacy .card {
+  padding: 28px;
+}
+
+.privacy h2 {
+  font: 700 26px var(--type);
+  margin-bottom: 8px;
+}
+
+.privacy .lead {
+  color: var(--ink-soft);
+  margin: 0 0 8px;
+}
+
+.privacy h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 24px 0 6px;
+}
+
+.privacy ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.privacy li + li {
+  margin-top: 6px;
+}
+
+.privacy p {
+  margin: 0;
+}
+
+.privacy .back {
+  margin-top: 28px;
+  font-size: 14px;
+}
+
+.danger-zone {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+button.danger {
+  background: var(--surface);
+  color: var(--red-ink);
+  border: 1.5px solid var(--red);
+}
+
+button.danger:hover:not(:disabled) {
+  background: var(--red);
+  color: #fff;
+}
+
+.delete-account p {
+  margin: 0 0 10px;
+}
+
+.delete-account div {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.delete-account input {
+  flex: 1;
+  min-width: 200px;
 }

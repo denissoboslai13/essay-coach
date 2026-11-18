@@ -40,6 +40,12 @@ class Settings(BaseSettings):
     daily_disputes_per_user: int = 10
     monthly_budget_usd: float = 10.0
 
+    # Shown on the privacy page as the contact for data requests (empty = "the person who invited you")
+    privacy_contact: str = ""
+    # `python -m app.admin backup` writes here and keeps the newest `backup_keep` copies
+    backup_dir: str = "./backups"
+    backup_keep: int = 14
+
     @property
     def cors_origin_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]

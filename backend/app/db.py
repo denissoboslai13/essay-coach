@@ -39,11 +39,34 @@ def _add_missing_columns() -> None:
                 conn.execute(text(ddl))
 
 
+def _relax_not_null() -> None:
+    """A column that became nullable in the models (e.g. usage_log.user_id, cleared on account deletion)
+    stays NOT NULL in an existing database. SQLite can't change that in place, so the table is rebuilt."""
+    inspector = inspect(engine)
+    for table in SQLModel.metadata.sorted_tables:
+        if not inspector.has_table(table.name):
+            continue
+        existing = {c["name"]: c for c in inspector.get_columns(table.name)}
+        if not any(c.nullable and c.name in existing and not existing[c.name]["nullable"] for c in table.columns):
+            continue
+        old = f"{table.name}__old"
+        columns = ", ".join(f'"{c.name}"' for c in table.columns if c.name in existing)
+        with engine.begin() as conn:
+            # Index names must be free for the new table
+            for index in inspector.get_indexes(table.name):
+                conn.execute(text(f'DROP INDEX "{index["name"]}"'))
+            conn.execute(text(f'ALTER TABLE "{table.name}" RENAME TO "{old}"'))
+            table.create(conn)
+            conn.execute(text(f'INSERT INTO "{table.name}" ({columns}) SELECT {columns} FROM "{old}"'))
+            conn.execute(text(f'DROP TABLE "{old}"'))
+
+
 def create_db_and_tables() -> None:
     from app import models  # noqa: F401  (registers the tables)
 
     SQLModel.metadata.create_all(engine)
     _add_missing_columns()
+    _relax_not_null()
 
 
 def get_session() -> Iterator[Session]:

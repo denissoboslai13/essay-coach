@@ -38,7 +38,7 @@ app/
   main.py            FastAPI app, CORS, error handlers
   site.py            production entry: API under /api + built frontend (Docker)
   auth.py            Google sign-in, invites, cookie sessions, current user
-  admin.py           CLI: invite codes, usage, assign old essays
+  admin.py           CLI: invite codes, usage, assign old essays, delete a user, backup
   config.py          settings from environment / .env
   db.py              SQLite engine and session
   models.py          tables: User -> Essay -> Revision -> Issue, LoginSession, Invite, UsageLog
@@ -60,10 +60,11 @@ and only return that user's own data.
 
 | Method | Path | Purpose |
 |---|---|---|
-| GET | `/auth/config` | Google client id, whether dev login is on |
+| GET | `/auth/config` | Google client id, privacy contact |
 | POST | `/auth/google` | `{credential, invite_code?}` -> session cookie |
 | POST | `/auth/logout` | end the session |
 | GET | `/auth/me` | email, admin flag, checks left today |
+| DELETE | `/auth/me` | `{confirm_email}` -> deletes the account and all its essays |
 | GET | `/topics?harder=false` | 3 random topics |
 | POST | `/essays` | start an essay: `{topic, modifiers}` |
 | GET | `/essays`, `/essays/{id}` | essays with all revisions and issues |

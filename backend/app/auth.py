@@ -21,8 +21,9 @@ from sqlmodel import Session, select
 from app.config import get_settings
 from app.db import get_session
 from app.models import Essay, Invite, LoginSession, User, utcnow
-from app.schemas import AuthConfigOut, GoogleLogin, MeOut, QuotaOut
+from app.schemas import AccountDelete, AuthConfigOut, GoogleLogin, MeOut, QuotaOut
 from app.services import usage
+from app.services.account import delete_account
 
 SESSION_COOKIE = "ec_session"
 # Sent as `detail` when an unknown account signs in without a code, so the frontend asks for one
@@ -131,7 +132,7 @@ def _register_with_invite(session: Session, user: User, code: str | None) -> Non
     # Conditional update, so two people can't use the same code at the same moment
     claimed = session.exec(
         update(Invite)
-        .where(Invite.code == normalize_invite(code), Invite.used_by_id.is_(None))
+        .where(Invite.code == normalize_invite(code), Invite.used_at.is_(None))
         .values(used_by_id=user.id, used_at=utcnow())
     )
     if claimed.rowcount != 1:
@@ -175,7 +176,8 @@ def me_out(session: Session, user: User) -> MeOut:
 
 @router.get("/config", response_model=AuthConfigOut)
 def auth_config() -> AuthConfigOut:
-    return AuthConfigOut(google_client_id=get_settings().google_client_id)
+    settings = get_settings()
+    return AuthConfigOut(google_client_id=settings.google_client_id, privacy_contact=settings.privacy_contact)
 
 
 @router.post("/google", response_model=MeOut)
@@ -198,6 +200,24 @@ def logout(request: Request, response: Response, session: Session = Depends(get_
     if token := request.cookies.get(SESSION_COOKIE):
         session.exec(delete(LoginSession).where(LoginSession.token_hash == _hash(token)))
         session.commit()
+    response.delete_cookie(SESSION_COOKIE, path="/")
+
+
+@router.delete("/me", status_code=204)
+def delete_me(
+    body: AccountDelete,
+    response: Response,
+    user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+) -> None:
+    """Deletes the signed-in account and all its essays. The user types their email to confirm."""
+    if get_settings().local_mode:
+        raise HTTPException(status_code=400, detail="There is no account to delete in local mode.")
+    if body.confirm_email.strip().lower() != user.email:
+        raise HTTPException(status_code=400, detail="The email you typed does not match your account.")
+    # Not while a check is running for this user, so it can't write to a deleted account
+    with usage.one_action_at_a_time(user.id):
+        delete_account(session, user)
     response.delete_cookie(SESSION_COOKIE, path="/")
 
 

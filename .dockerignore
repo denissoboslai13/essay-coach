@@ -10,4 +10,5 @@
 frontend/dist
 backend/tests
 deploy
+**/backups
 .git

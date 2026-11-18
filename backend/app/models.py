@@ -43,6 +43,7 @@ class Invite(SQLModel, table=True):
     # Who it was meant for, as a reminder for the admin
     note: str | None = None
     created_at: datetime = Field(default_factory=utcnow)
+    # used_at marks the code as used. used_by_id is cleared when that account is deleted
     used_by_id: int | None = Field(default=None, foreign_key="user.id")
     used_at: datetime | None = None
 
@@ -53,7 +54,8 @@ class UsageLog(SQLModel, table=True):
     __tablename__ = "usage_log"
 
     id: int | None = Field(default=None, primary_key=True)
-    user_id: int = Field(foreign_key="user.id", index=True)
+    # None after the account was deleted: the cost still counts toward the monthly budget
+    user_id: int | None = Field(default=None, foreign_key="user.id", index=True)
     # One user action (a review or a dispute) can make several AI calls (leak retry)
     request_id: str = Field(index=True)
     kind: str  # "review" | "dispute"

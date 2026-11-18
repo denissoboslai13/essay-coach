@@ -97,7 +97,9 @@ The same code runs as an **invite-only** web app, so invited people can use it w
 - **Ownership checks:** every user sees only their own essays. Someone else's essay looks like a missing one (404).
 - **Cost control:** every AI call is logged with its tokens and price. A **daily limit** per user (checks and rule explanations) and a **monthly budget cap** for the whole app.
 - **Docker:** one image, where the backend also serves the built frontend. On the server it sits behind a **Cloudflare Tunnel** on an own domain (no open ports, automatic HTTPS), shared with other projects.
-- **Admin commands:** `python -m app.admin invite | invites | usage | assign-orphans`.
+- **Privacy:** a privacy page (`/#privacy`), and users can delete their account and all their essays themselves.
+- **Backups:** a daily, integrity-checked copy of the database, the newest 14 are kept.
+- **Admin commands:** `python -m app.admin invite | invites | usage | assign-orphans | delete-user | backup`.
 
 Try the hosted setup locally:
 
@@ -138,12 +140,13 @@ backend/
     main.py                 FastAPI app (API)
     site.py                 production entry: API under /api + built frontend
     auth.py                 Google sign-in, invites, sessions, local mode
-    admin.py                CLI: invite codes, usage
+    admin.py                CLI: invite codes, usage, delete a user, backup
     ai/provider.py          the only module that calls the AI vendor
     ai/prompts.py           prompt text (normal vs strict, modifiers)
     services/feedback.py    write -> feedback -> revise loop
     services/leak_guard.py  "never reveal the correction" backstop
     services/usage.py       prices, usage log, daily and monthly limits
+    services/account.py     account deletion
     routers/                HTTP endpoints
   tests/                    pytest, fixtures/film_evening.json
 frontend/
@@ -163,11 +166,11 @@ More on the API and the code: [`backend/README.md`](backend/README.md).
 - Prototype: topics, editor, feedback loop, disputes, difficulty modifiers, leak guard
 - Local BYOK mode without login
 - Invite-only hosted version: Google sign-in, invite codes, ownership checks, usage log, daily limits, monthly budget, Docker, admin commands
+- Privacy page, account deletion (GDPR), daily database backups
 
 ### Next
 
-- Run it on the home server with an own domain
-- Privacy page and "delete my account" (GDPR), nightly database backups
+- Run it on the home server with an own domain, with an off-server copy of the backups
 - **Cheaper model for public users** (e.g. Claude Haiku 5.5), only after it passes the fixture tests
 
 ### Planned

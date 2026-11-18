@@ -1,12 +1,27 @@
 # Server only, on top of docker-compose.yml:
 #   docker compose -f docker-compose.yml -f docker-compose.server.yml up -d --build
 # No published port: the shared Cloudflare tunnel reaches the app over the "web" network.
+# Before the first start: `mkdir backups` (the container runs as uid 1000, see deploy/README.md).
 services:
   essay-coach:
     ports: !reset []
     networks:
       - default
       - web
+
+  # Copies the database to ./backups once a day and keeps the newest BACKUP_KEEP copies
+  backup:
+    build: .
+    restart: unless-stopped
+    env_file: backend/.env
+    environment:
+      DATABASE_URL: sqlite:////data/essay_coach.db
+      LOCAL_MODE: "false"
+      BACKUP_DIR: /backups
+    volumes:
+      - essay-data:/data
+      - ./backups:/backups
+    command: ["sh", "-c", "while true; do python -m app.admin backup; sleep 86400; done"]
 
 networks:
   web:

@@ -96,7 +96,9 @@ For the final project: invite-only public version on the user's own home server.
 - Every endpoint checks that the essay/issue belongs to the signed-in user (others get 404).
 - Every AI call is logged with tokens and price (`services/usage.py`). Per-user daily limits on reviews and disputes, global monthly budget for everyone.
 - Docker: one image (backend serves the built frontend, `app/site.py`). One shared Cloudflare tunnel on the server for all projects, via the `web` Docker network. See `deploy/README.md`.
-- Still to do before going public: backups, privacy page, account deletion.
+- Privacy page at `/#privacy` (contact from `PRIVACY_CONTACT`). Account deletion (`DELETE /auth/me`, or `python -m app.admin delete-user`) removes essays and sessions; usage log rows stay with `user_id` NULL so the budget stays right, and the used invite stays used (`used_at`).
+- Daily backup service in `docker-compose.server.yml` (`python -m app.admin backup`, keeps `BACKUP_KEEP` copies). The privacy page promises deleted data leaves backups after that many days.
+- Still to do before going public: deploy on the server, off-server copy of the backups.
 
 ## Architecture
 
