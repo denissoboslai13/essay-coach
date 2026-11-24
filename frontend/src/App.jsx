@@ -56,6 +56,8 @@ export default function App() {
           <div className="brand">
             <h1>Essay Coach</h1>
             <p>an aid, not a shortcut</p>
+            {/* eslint-disable-next-line no-undef -- injected by vite.config.js */}
+            <span className="build">{__BUILD_LABEL__}</span>
           </div>
           {me && (
             <div className="account">

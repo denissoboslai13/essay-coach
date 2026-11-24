@@ -31,6 +31,8 @@ export default function Feedback({ result, onHighlight, fixedTotal, onUsage }) {
 
   const { revision } = result;
   const previous = result.previous_issues.filter((i) => i.resolution);
+  const errors = revision.issues.filter((i) => i.kind !== "suggestion");
+  const suggestions = revision.issues.filter((i) => i.kind === "suggestion");
   return (
     <section>
       <div className="notes-head">
@@ -49,11 +51,26 @@ export default function Feedback({ result, onHighlight, fixedTotal, onUsage }) {
             resubmit.
           </p>
           <ul className="issues">
-            {revision.issues.map((issue, i) => (
+            {errors.map((issue, i) => (
               <IssueItem key={issue.id} number={i + 1} issue={issue} onHighlight={onHighlight} onUsage={onUsage} />
             ))}
           </ul>
         </>
+      )}
+
+      {suggestions.length > 0 && (
+        <div className="suggestions">
+          <h4>Optional suggestions</h4>
+          <p className="hint">
+            Strict grading: these are not errors. Your text is correct here, but it could be stronger. Try them if
+            you like; they don't keep the review going.
+          </p>
+          <ul className="issues">
+            {suggestions.map((issue, i) => (
+              <IssueItem key={issue.id} number={i + 1} issue={issue} onHighlight={onHighlight} onUsage={onUsage} />
+            ))}
+          </ul>
+        </div>
       )}
 
       {revision.strength && (
@@ -108,9 +125,11 @@ function IssueItem({ number, issue: initialIssue, onHighlight, onUsage }) {
     }
   };
 
+  const suggestion = issue.kind === "suggestion";
+
   return (
     <li
-      className="issue"
+      className={suggestion ? "issue suggestion" : "issue"}
       tabIndex={0}
       onMouseEnter={() => onHighlight(issue.passage)}
       onMouseLeave={() => onHighlight(null)}
@@ -142,7 +161,8 @@ function IssueItem({ number, issue: initialIssue, onHighlight, onUsage }) {
             {loading ? "Asking..." : "Explain"}
           </button>
         </div>
-      ) : (
+      ) : suggestion ? null : (
+        // Suggestions are optional anyway, so there is nothing to dispute
         <button className="link" onClick={() => setShowForm(true)}>
           I don't think that is an error
         </button>

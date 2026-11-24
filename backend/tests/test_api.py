@@ -42,6 +42,48 @@ def test_issues_are_capped_at_five(client, provider):
     assert [i["rank"] for i in body["revision"]["issues"]] == [1, 2, 3, 4, 5]
 
 
+def test_strict_grading_allows_seven_errors(client, provider):
+    provider.responses.append(make_feedback(9, n_suggestions=2))
+    essay_id = create_essay(client, strict_grading=True)
+    body = client.post(f"/essays/{essay_id}/revisions", json={"text": ESSAY_TEXT}).json()
+    assert [i["rank"] for i in body["revision"]["issues"]] == [1, 2, 3, 4, 5, 6, 7]
+    # The errors don't fit in one round, so no suggestions yet
+    assert {i["kind"] for i in body["revision"]["issues"]} == {"error"}
+    assert "suggestions" in provider.calls[0]["system"]
+
+
+def test_strict_grading_shows_up_to_three_suggestions(client, provider):
+    feedback = make_feedback(2, n_suggestions=5)
+    # A "suggestion" on a passage that has an error is dropped
+    feedback.suggestions[0].passage = "passage 1"
+    provider.responses.append(feedback)
+    essay_id = create_essay(client, strict_grading=True)
+    body = client.post(f"/essays/{essay_id}/revisions", json={"text": ESSAY_TEXT}).json()
+    suggestions = [i for i in body["revision"]["issues"] if i["kind"] == "suggestion"]
+    assert [i["passage"] for i in suggestions] == [f"idea text {n}" for n in (2, 3, 4)]
+    assert [i["rank"] for i in suggestions] == [1, 2, 3]
+
+
+def test_normal_grading_drops_suggestions(client, provider):
+    provider.responses.append(make_feedback(1, n_suggestions=2))
+    essay_id = create_essay(client)
+    body = client.post(f"/essays/{essay_id}/revisions", json={"text": ESSAY_TEXT}).json()
+    assert [i["kind"] for i in body["revision"]["issues"]] == ["error"]
+
+
+def test_suggestions_do_not_keep_the_loop_going(client, provider):
+    # Round 1: errors + suggestions. Round 2: only suggestions left -> done
+    provider.responses += [make_feedback(2, n_suggestions=2), make_feedback(0, previous={1: "fixed", 2: "fixed"}, n_suggestions=2)]
+    essay_id = create_essay(client, strict_grading=True)
+    client.post(f"/essays/{essay_id}/revisions", json={"text": ESSAY_TEXT})
+    body = client.post(f"/essays/{essay_id}/revisions", json={"text": ESSAY_TEXT + " more"}).json()
+    assert body["status"] == "no_issues"
+    assert len(body["revision"]["issues"]) == 2  # the suggestions are still shown
+    assert client.get(f"/essays/{essay_id}").json()["completed"] is True
+    # Only the 2 errors of round 1 were sent for re-checking, not the suggestions
+    assert "idea text" not in provider.calls[1]["user"].split("<essay>")[0]
+
+
 def test_loop_continues_until_no_issues(client, provider):
     provider.responses += [make_feedback(3), make_feedback(1), make_feedback(0)]
     essay_id = create_essay(client)

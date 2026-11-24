@@ -830,3 +830,40 @@ button.danger:hover:not(:disabled) {
   flex: 1;
   min-width: 200px;
 }
+
+/* Strict grading: optional suggestions, visually quieter than errors */
+.suggestions {
+  margin-top: 18px;
+}
+
+.suggestions h4 {
+  margin: 0 0 4px;
+  font: 700 12px var(--type);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.issue.suggestion {
+  background: transparent;
+  border-style: dashed;
+}
+
+.issue.suggestion .num {
+  color: var(--ink-soft);
+}
+
+.issue.suggestion .passage {
+  text-decoration: underline dashed var(--ink-soft);
+}
+
+.issue.suggestion .question {
+  color: var(--ink);
+}
+
+/* Which build is running (set in vite.config.js) */
+.brand .build {
+  font: 11px var(--type);
+  letter-spacing: 0.5px;
+  color: #9d9584;
+}

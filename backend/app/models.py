@@ -103,7 +103,9 @@ class Revision(SQLModel, table=True):
 class Issue(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     revision_id: int = Field(foreign_key="revision.id", index=True)
-    # 1 = most important
+    # "error" | "suggestion". Suggestions (strict grading) are optional and don't keep the loop going
+    kind: str = "error"
+    # 1 = most important, counted separately for errors and suggestions
     rank: int
     category: str
     passage: str

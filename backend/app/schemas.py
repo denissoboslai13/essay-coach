@@ -63,7 +63,10 @@ class AIFeedback(BaseModel):
     previous_issues: list[AIPreviousIssueCheck] = Field(
         description="One entry per issue from the previous round. Empty if there was no previous round."
     )
-    issues: list[AIIssue] = Field(description="At most 5 issues, most important first. Empty only if no issues remain.")
+    issues: list[AIIssue] = Field(description="Errors only, most important first. Empty only if no errors remain.")
+    suggestions: list[AIIssue] = Field(
+        description="Optional improvements to correct text (strict grading only). Empty in normal grading."
+    )
     strength: str = Field(description="One sentence about what the author does well.")
 
 
@@ -98,8 +101,13 @@ class DisputeCreate(BaseModel):
     comment: str | None = Field(default=None, max_length=1000)
 
 
+IssueKind = Literal["error", "suggestion"]
+
+
 class IssueOut(BaseModel):
     id: int
+    # "suggestion": optional improvement (strict grading), does not keep the review loop going
+    kind: IssueKind
     rank: int
     category: str
     passage: str

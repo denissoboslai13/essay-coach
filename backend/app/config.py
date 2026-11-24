@@ -33,7 +33,10 @@ class Settings(BaseSettings):
     # Limits enforced by the API before anything reaches the AI
     min_words_for_feedback: int = 50
     max_essay_chars: int = 20_000
+    # Errors per round (normal / strict grading) and optional suggestions (strict grading only)
     max_issues_per_round: int = 5
+    max_issues_strict: int = 7
+    max_suggestions_strict: int = 3
 
     # Cost limits. Days and months are counted in UTC
     daily_reviews_per_user: int = 10

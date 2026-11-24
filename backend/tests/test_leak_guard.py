@@ -29,6 +29,9 @@ def test_detects_corrections(field, source, leak):
         ("Which of the words that sound like 'to' means 'more than is good'?", FILM),
         ("Is each subject (students, plans, everybody) singular or plural? Don't guess.", TRAVEL),
         ("English often uses a different tense after this phrase.", TRAVEL),
+        # False alarms seen in the AI test of 2026-11-24
+        ("What details about the organiser would help the reader?", FILM),
+        ("Check each part: Is 'child' countable?", "When I was child my father is old."),
     ],
 )
 def test_allows_quotes_and_hints(field, source):

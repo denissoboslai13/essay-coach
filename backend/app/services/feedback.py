@@ -25,16 +25,16 @@ def _leak_retry_note(leaks: list[str]) -> str:
 
 
 def _feedback_leaks(feedback: AIFeedback, sources: list[str]) -> list[str]:
-    fields = [f for i in feedback.issues for f in (i.problem, i.question)]
+    fields = [f for i in feedback.issues + feedback.suggestions for f in (i.problem, i.question)]
     fields += [c.comment for c in feedback.previous_issues] + [feedback.strength]
     return [leak for f in fields for leak in find_leaks(f, sources)]
 
 
 def _scrub_feedback(feedback: AIFeedback, sources: list[str]) -> None:
     """Last resort after a retry: replace any field that still leaks with a neutral text."""
-    for issue in feedback.issues:
+    for issue in feedback.issues + feedback.suggestions:
         if find_leaks(issue.problem, sources):
-            issue.problem = f"There is a {issue.category} problem in this passage."
+            issue.problem = f"This passage has a problem with {issue.category}."
         if find_leaks(issue.question, sources):
             issue.question = GENERIC_QUESTION
     for check in feedback.previous_issues:
@@ -73,10 +73,18 @@ def generate_explanation(provider: MeteredAI, user: str, sources: list[str]) -> 
     return result
 
 
-def _overlaps_dismissed(passage: str, dismissed: list[Issue]) -> bool:
-    """True if a new passage is the same as, or contains / is contained in, a dismissed one."""
+def _overlaps(passage: str, others: list) -> bool:
+    """True if a passage is the same as, or contains / is contained in, one of the others' passages."""
     p = _normalize(passage)
-    return any((d := _normalize(i.passage)) in p or p in d for i in dismissed)
+    return any((o := _normalize(i.passage)) in p or p in o for i in others)
+
+
+def _suggestions_to_show(feedback: AIFeedback, errors: list, max_errors: int) -> list:
+    """Backstop for the prompt: suggestions only once the errors fit in one round, and never on an
+    erroneous passage (the model sometimes files an error that didn't fit as a "suggestion")."""
+    if len(feedback.issues) >= max_errors:
+        return []
+    return [s for s in feedback.suggestions if not _overlaps(s.passage, errors)]
 
 
 def review_revision(session: Session, provider: MeteredAI, essay: Essay, text: str) -> FeedbackOut:
@@ -100,10 +108,16 @@ def review_revision(session: Session, provider: MeteredAI, essay: Essay, text: s
             f"You have {words}. Cut {words - modifiers.max_words} words before submitting.",
         )
 
-    previous = [i for i in essay.revisions[-1].issues if not i.dismissed] if essay.revisions else []
+    # Only errors are checked again; suggestions are optional
+    previous = (
+        [i for i in essay.revisions[-1].issues if i.kind == "error" and not i.dismissed] if essay.revisions else []
+    )
     dismissed = [i for rev in essay.revisions for i in rev.issues if i.dismissed]
 
-    system = prompts.feedback_system_prompt(modifiers, settings.max_issues_per_round)
+    # Strict grading: more errors per round, plus optional suggestions
+    max_errors = settings.max_issues_strict if modifiers.strict_grading else settings.max_issues_per_round
+    max_suggestions = settings.max_suggestions_strict if modifiers.strict_grading else 0
+    system = prompts.feedback_system_prompt(modifiers, max_errors, max_suggestions)
     user = prompts.feedback_user_prompt(
         essay.topic,
         text,
@@ -131,21 +145,28 @@ def review_revision(session: Session, provider: MeteredAI, essay: Essay, text: s
         # Judged once in the first round, then kept, so it doesn't change with every revision
         strength=essay.revisions[0].strength if essay.revisions else feedback.strength,
     )
-    # Backstop for the prompt: never re-flag something the learner was right about
-    new_issues = [i for i in feedback.issues if not _overlaps_dismissed(i.passage, dismissed)]
-    # The schema can't enforce a max length, so cap it here
-    for rank, ai_issue in enumerate(new_issues[: settings.max_issues_per_round], start=1):
-        revision.issues.append(
-            Issue(
-                rank=rank,
-                category=ai_issue.category,
-                passage=ai_issue.passage,
-                problem=ai_issue.problem,
-                question=ai_issue.question,
+    for kind, ai_items, limit in (
+        ("error", feedback.issues, max_errors),
+        ("suggestion", _suggestions_to_show(feedback, feedback.issues, max_errors), max_suggestions),
+    ):
+        # Backstop for the prompt: never re-flag something the learner was right about
+        kept = [i for i in ai_items if not _overlaps(i.passage, dismissed)]
+        # The schema can't enforce a max length, so cap it here (normal grading: no suggestions at all)
+        for rank, ai_issue in enumerate(kept[:limit], start=1):
+            revision.issues.append(
+                Issue(
+                    kind=kind,
+                    rank=rank,
+                    category=ai_issue.category,
+                    passage=ai_issue.passage,
+                    problem=ai_issue.problem,
+                    question=ai_issue.question,
+                )
             )
-        )
 
-    essay.completed = not revision.issues
+    # Suggestions don't keep the loop going: the essay is done when no errors are left
+    has_errors = any(i.kind == "error" for i in revision.issues)
+    essay.completed = not has_errors
     session.add(revision)
     session.add(essay)
     session.commit()
@@ -154,7 +175,7 @@ def review_revision(session: Session, provider: MeteredAI, essay: Essay, text: s
         session.refresh(issue)
 
     return FeedbackOut(
-        status="issues_found" if revision.issues else "no_issues",
+        status="issues_found" if has_errors else "no_issues",
         revision=RevisionOut.model_validate(revision, from_attributes=True),
         previous_issues=[IssueOut.model_validate(i, from_attributes=True) for i in previous],
     )

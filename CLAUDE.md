@@ -29,10 +29,11 @@ Design consequence: nothing is "fixed for" the user, and the tool must not end w
 
 1. Never write, rewrite or offer a corrected version of the user's sentences, even if the user asks. Explain why instead.
 2. For each issue show the **passage** from the text (not only a single word), say what the problem is, and ask a guiding question. The user finds the fix.
-3. Show at most 5 issues per round, the most important first (meaning-changing problems, then repeated patterns, then small things). Include structure and style, not only grammar.
-4. After the user revises, check the text again. Keep going until no issues are found. Do not stop just because the previously flagged items were fixed.
-5. The user can say "I don't think that is an error". Tools make mistakes, so explain the rule and let the user decide.
-6. Feedback language: English. Keep explanations short and plain.
+3. Show at most 5 errors per round (7 with strict grading), the most important first (meaning-changing problems, then repeated patterns, then small things). Errors include structure and argumentation (off topic, no conclusion, contradictions), not only grammar.
+4. After the user revises, check the text again. Keep going until no errors are found. Do not stop just because the previously flagged items were fixed.
+5. Errors vs suggestions (decided after the AI test, 2026-11-24): an error is something wrong; a suggestion improves text that is already correct (style, formality, more detail). Normal grading shows errors only. Strict grading also shows up to 3 optional suggestions, but only once the errors fit in one round. Suggestions never keep the loop going, otherwise the loop never ends (the AI always finds something to improve).
+6. The user can say "I don't think that is an error". Tools make mistakes, so explain the rule and let the user decide.
+7. Feedback language: English. Keep explanations short and plain.
 
 ## Draft feedback prompt (starting point, tested once in Gemini, not yet tested in the prototype)
 
@@ -120,4 +121,4 @@ To be decided with the user before scaffolding. Ask which language and framework
 - Is paste lock on or off by default?
 - How to compare progress when the modifiers change between essays (compare similar with similar)?
 - Keep a numeric score or not? Numbers can push users to chase the score instead of learning.
-- Does "stricter grading" via the prompt give consistent results?
+- Does "stricter grading" give consistent results? The prompt alone did not (AI test 2026-11-24), so strict now also changes the code path: 7 errors instead of 5, plus optional suggestions.

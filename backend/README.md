@@ -68,7 +68,7 @@ and only return that user's own data.
 | GET | `/topics?harder=false` | 3 random topics |
 | POST | `/essays` | start an essay: `{topic, modifiers}` |
 | GET | `/essays`, `/essays/{id}` | essays with all revisions and issues |
-| POST | `/essays/{id}/revisions` | submit text, get up to 5 issues |
+| POST | `/essays/{id}/revisions` | submit text, get up to 5 errors (strict: 7 + up to 3 suggestions) |
 | POST | `/issues/{id}/dispute` | "I don't think that is an error" -> rule explanation |
 
 Reviews and disputes return 429 when the daily limit or the monthly budget is used up.

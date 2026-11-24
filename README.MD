@@ -19,12 +19,20 @@ Why it exists: more and more people let AI write their essays for them. Essay Co
 
 1. **Pick a topic.** You get 3 topics (normal or harder) and choose one. Topics you have finished are not offered again.
 2. **Write.** The editor shows a word count. You can turn on a timer and a paste lock. Browser spellcheck is off on purpose.
-3. **Get feedback.** You get at most **5 issues** per round, most important first: meaning-changing problems, then repeated patterns, then small things. Each issue has:
+3. **Get feedback.** You get at most **5 errors** per round (7 with stricter grading), most important first: meaning-changing problems, then repeated patterns, then small things. Each issue has:
    - the **passage** from your text (highlighted in the editor on hover),
    - **what the problem is**, in short plain English,
    - a **guiding question**, never the fix.
-4. **Revise and resubmit.** Every round checks the whole text again and shows which earlier issues you fixed. The loop ends only when no issues are found, not just because the flagged items were fixed.
+4. **Revise and resubmit.** Every round checks the whole text again and shows which earlier errors you fixed. The loop ends only when no errors are found, not just because the flagged items were fixed.
 5. **Disagree.** "I don't think that is an error" asks for the rule behind the flag and a verdict. If you were right, or it is a style choice, the passage is not flagged again.
+
+### Errors vs suggestions
+
+An **error** is something wrong: grammar, a wrong word, spelling, punctuation, an unclear sentence, a contradiction, or a text that misses the task (off topic, no conclusion). A **suggestion** is about text that is already correct but could be better (more formal, more precise, more detail).
+
+- Normal grading shows **errors only**.
+- Stricter grading also shows up to **3 optional suggestions**, but only once all errors fit in one round.
+- Suggestions **never keep the loop going**. Without this split the loop never ended in testing, because the AI always finds something to improve.
 
 ### Difficulty modifiers (all optional)
 
@@ -32,10 +40,10 @@ Instead of fixed levels, you switch on what makes writing harder:
 
 | Modifier         | Effect                                                                           |
 | ---------------- | -------------------------------------------------------------------------------- |
-| Stricter grading | The prompt also reports minor issues (word choice, transitions, punctuation)     |
+| Stricter grading | Up to 7 errors per round instead of 5, minor ones included, plus up to 3 optional style suggestions |
 | Timer            | Countdown until the first submission                                             |
 | Harder topics    | Argumentative / abstract topic list                                              |
-| Word target      | Below it: flagged as underdeveloped. More than 10 % above it: submission refused |
+| Word target      | Clearly below it: flagged as a structure error. More than 10 % above it: submission refused |
 | Paste lock       | Blocks pasting into the editor (a nudge, not a real lock)                        |
 
 The active modifiers are stored with every essay, so progress can later be compared like with like.
@@ -190,7 +198,10 @@ More on the API and the code: [`backend/README.md`](backend/README.md).
 ## Known limits (honest list)
 
 - **Paste lock can be bypassed** (second window, retyping). It is a nudge.
-- **"Stricter grading via the prompt" is an assumption.** It needs testing on the same essay in normal and strict mode.
+- **Stricter grading via the prompt alone did not work.** In testing (same essay, normal vs strict) the difference between two runs of one mode was bigger than between the modes. So strict now also changes the code path: 7 errors instead of 5, plus optional suggestions.
+- **Error vs suggestion is decided by the AI** and is not fully consistent: a borderline point can be an error in one run and a suggestion in the next. Disputing a flag is the way out.
+- **The leak guard is tuned to be strict.** It sometimes asks the AI again (one extra call) or replaces a hint with a more general one, and it is a backstop, not a guarantee.
+- **An essay written by another AI passes as error-free.** The tool can't tell who wrote a text. It is built for people who want to improve.
 - The AI can be wrong. That is why every flag can be disputed and the user decides.
 - Daily limits and the budget are counted in UTC, and the price per call is an estimate from token counts.
 

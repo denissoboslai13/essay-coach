@@ -31,9 +31,14 @@ class LiveAI:
 
 def review(text: str, modifiers: Modifiers = Modifiers()) -> AIFeedback:
     settings = get_settings()
+    strict = modifiers.strict_grading
     return generate_feedback(
         LiveAI(),
-        prompts.feedback_system_prompt(modifiers, settings.max_issues_per_round),
+        prompts.feedback_system_prompt(
+            modifiers,
+            settings.max_issues_strict if strict else settings.max_issues_per_round,
+            settings.max_suggestions_strict if strict else 0,
+        ),
         prompts.feedback_user_prompt(FIXTURE["topic"], text),
         [text],
     )
@@ -43,6 +48,8 @@ def print_feedback(label: str, feedback: AIFeedback) -> None:
     print(f"\n=== {label} ===")
     for i, issue in enumerate(feedback.issues, 1):
         print(f"{i}. [{issue.category}] \"{issue.passage}\"\n   {issue.problem}\n   -> {issue.question}")
+    for i, s in enumerate(feedback.suggestions, 1):
+        print(f"S{i}. [{s.category}] \"{s.passage}\"\n   {s.problem}\n   -> {s.question}")
     print(f"Strength: {feedback.strength}")
 
 
@@ -64,6 +71,7 @@ def test_fixture_feedback_format():
     print_feedback("normal", feedback)
 
     assert 1 <= len(feedback.issues) <= 5, "Essay has 15 known errors, so issues must be found"
+    assert feedback.suggestions == [], "Normal grading gives no suggestions"
     for issue in feedback.issues:
         assert issue.passage in FIXTURE["text"], f"Passage not quoted exactly: {issue.passage!r}"
         assert len(issue.passage.split()) > 1, f"Passage should be more than one word: {issue.passage!r}"

@@ -31,9 +31,18 @@ class FakeProvider:
         return Completion(output=response, model=model, input_tokens=FAKE_INPUT_TOKENS, output_tokens=FAKE_OUTPUT_TOKENS)
 
 
-def make_feedback(n_issues: int, previous: dict[int, str] | None = None) -> AIFeedback:
+def make_feedback(n_issues: int, previous: dict[int, str] | None = None, n_suggestions: int = 0) -> AIFeedback:
     """`previous` maps previous-round issue numbers to "fixed" / "not_fixed"."""
     return AIFeedback(
+        suggestions=[
+            AIIssue(
+                passage=f"idea text {i}",
+                category="style",
+                problem=f"could be better {i}",
+                question=f"suggestion question {i}?",
+            )
+            for i in range(1, n_suggestions + 1)
+        ],
         previous_issues=[
             AIPreviousIssueCheck(number=n, status=status, comment=f"{status} comment")
             for n, status in (previous or {}).items()

@@ -45,6 +45,14 @@ def _quote_leaks(field: str, sources: list[str]) -> list[str]:
     return leaks
 
 
+def _different_ending(a: str, b: str) -> bool:
+    """True if a and b share a stem of 5+ letters and differ only in the last 1-2 letters."""
+    stem = 0
+    while stem < min(len(a), len(b)) and a[stem] == b[stem]:
+        stem += 1
+    return stem >= 5 and len(a) - stem <= 2 and len(b) - stem <= 2
+
+
 def _word_leaks(field: str, vocab: set[str]) -> list[str]:
     """Unquoted words that look like a spelling fix of a word in the text (definately -> definitely)."""
     leaks = []
@@ -55,6 +63,9 @@ def _word_leaks(field: str, vocab: set[str]) -> list[str]:
             # Prefix pairs are inflections (student/students), not spelling fixes
             if abs(len(original) - len(word)) > 1 or word.startswith(original) or original.startswith(word):
                 continue
+            # Same stem, different short ending: another form of the word (organised/organiser)
+            if _different_ending(word, original):
+                continue
             if _similar(word, original, WORD_SIMILARITY):
                 leaks.append(word)
                 break
@@ -62,10 +73,11 @@ def _word_leaks(field: str, vocab: set[str]) -> list[str]:
 
 
 def _capital_leaks(field: str, cased_vocab: set[str]) -> list[str]:
-    """Mid-sentence capitalised words the learner wrote in lower case (friday -> Friday)."""
+    """Mid-sentence capitalised words the learner wrote in lower case (friday -> Friday).
+    A capital after ':' starts a question or sentence ("Check this: Is it countable?")."""
     lower_vocab = {w.lower() for w in cased_vocab}
     leaks = []
-    for m in re.finditer(r"(?<![.!?]\s)(?<!^)\b([A-Z][a-z]+)\b", field):
+    for m in re.finditer(r"(?<![.!?:]\s)(?<!^)\b([A-Z][a-z]+)\b", field):
         word = m.group(1)
         if word not in cased_vocab and word.lower() in lower_vocab:
             leaks.append(word)
