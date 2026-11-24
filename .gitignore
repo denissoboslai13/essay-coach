@@ -27,3 +27,8 @@ dist/
 .vscode/
 .idea/
 .DS_Store
+
+# Course materials (Slovak notes for the challenges), not part of the project
+vyzvy.txt
+vyzva*.md
+onepager_podklady.md
