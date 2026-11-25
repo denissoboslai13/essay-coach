@@ -198,9 +198,19 @@ After that:
 
 ### Planned
 
-- Essay history: see your past essays and revisions
-- **Skills map** after about 10 essays or a week, along the six ELLIPSE dimensions (cohesion, syntax, vocabulary, phraseology, grammar, conventions). It needs several essays because one essay is not a reliable measure.
-- Warning when the same type of error keeps coming back
+Suggested order: essay history, then error subtypes and the repeated-error warning, then the skills map. All three use data that is already stored (issues with category, resolution and dispute verdict), so subtypes should be added early to collect data for the later steps.
+
+- **Essay history:** see your past essays, every round, what was flagged, what was fixed (`resolution`) and what was disputed. The backend endpoints (`GET /essays`, `GET /essays/{id}`) already exist, so this is mostly frontend work, plus small backend tweaks if needed. A diff between rounds can come later.
+- **Error subtypes:** a fixed list of about 20-30 subtypes under the categories (e.g. under grammar: `articles`, `verb_tense`, `subject_verb_agreement`, `prepositions`). The AI only picks one from the list for each issue (a `Literal` in the structured output schema), never free text, so the subtypes can be counted. Test: add the correct subtype to each error in the fixture key and measure how often the AI picks it.
+- **Warning when the same error keeps coming back:** when one subtype shows up in several recent essays (e.g. 3 of the last 5), one extra AI call looks at those issues and points out the pattern, quoting the user's own passages and asking a guiding question. It follows the "never rewrite" rule, goes through the leak guard and counts toward the daily limits.
+- **Skills map:** a radar chart with the six ELLIPSE axes (cohesion, syntax, vocabulary, phraseology, grammar, conventions), shown after about 10 essays because one essay is not a reliable measure.
+  - Measure: errors per 100 words in each category over the last 10 essays.
+  - Bigger is better: an axis is full when there are no errors in that category. The scale comes from the user's own data (the worst category rate in their history), not from an absolute grade, so it is a comparison with yourself, not a score. A full axis means "no errors found", not "mastered".
+  - Separate charts for normal and strict grading, because strict reports more errors and the shapes would not be comparable.
+  - After 20 essays, the previous 10 are drawn as a second shape under the last 10, so the change is visible without a number.
+  - Count all errors of an essay across all rounds, not only the first round (each round shows at most 5 or 7, so categories compete for space in one round). Leave out suggestions and issues dismissed after a dispute.
+  - Clicking an axis shows example passages from the user's own essays.
+  - Structure, argumentation and style are not ELLIPSE dimensions; show them as a separate line under the chart.
 - Experiment: **local LLM** on the home server (e.g. via Ollama), compared against Claude on the fixture essay before any switch
 
 ### Later ideas

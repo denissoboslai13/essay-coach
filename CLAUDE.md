@@ -83,6 +83,7 @@ Not in the prototype: skills map, mobile app, other languages, other text types,
 
 - Skills map unlocked after about 10 essays or about a week, showing progress over time. Categories can follow the six ELLIPSE dimensions: cohesion, syntax, vocabulary, phraseology, grammar, conventions. Needs several essays because rater agreement in ELLIPSE was only 50-59%, so one essay is not reliable.
 - Warning when the user repeats the same type of error.
+- Design for the history, error subtypes, repeated-error warning and skills map (radar chart, errors per 100 words, separate charts for normal and strict) was agreed on 2026-11-25. Details are in README.md under "Roadmap > Planned".
 - Web app and a real mobile app.
 - Other languages, other levels.
 
