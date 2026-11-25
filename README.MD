@@ -2,7 +2,8 @@
 
 **An aid, not a shortcut.** Essay Coach helps self-taught English learners get better at writing essays _themselves_. It never writes or rewrites your text. It points to a passage, says what the problem is, and asks a guiding question, so **you** find and make the fix.
 
-> **Status: prototype.** Semester project for the course _AI Lab v praxi_, built by one person.
+> **Status: prototype finished (2026-11-25).** Semester project for the course _AI Lab v praxi_, built by one person.
+> All features in scope are built and tested. The only step left is running it on a home server with an own domain (see [Roadmap](#roadmap)).
 > You can run it on your own computer with your own Anthropic API key (**BYOK**, no login needed).
 > An invite-only hosted version with Google sign-in is built and will run on a home server (see [Hosting](#hosting-it-for-others)).
 
@@ -17,7 +18,7 @@ Why it exists: more and more people let AI write their essays for them. Essay Co
 
 ## What it does
 
-1. **Pick a topic.** You get 3 topics (normal or harder) and choose one. Topics you have finished are not offered again.
+1. **Pick a topic.** You get 3 topics (normal or harder), each of a different essay type, and choose one. There are 76 topics in six types (opinion, both views, advantages and disadvantages, problem and solution, report, narrative). They were drafted by AI once and reviewed by hand; no AI call is made to pick them. Topics you have finished are not offered again.
 2. **Write.** The editor shows a word count. You can turn on a timer and a paste lock. Browser spellcheck is off on purpose.
 3. **Get feedback.** You get at most **5 errors** per round (7 with stricter grading), most important first: meaning-changing problems, then repeated patterns, then small things. Each issue has:
    - the **passage** from your text (highlighted in the editor on hover),
@@ -88,8 +89,9 @@ Open http://localhost:5173. Vite proxies `/api` to the backend on port 8000.
 
 ```powershell
 cd backend
-pytest --ignore=tests/test_live.py   # fast, fake AI, no key, no cost
+pytest --ignore=tests/test_live.py --ignore=tests/test_live_loop.py   # fast, fake AI, no cost
 pytest tests/test_live.py -s         # real AI on the fixture essay (costs a few calls)
+pytest tests/test_live_loop.py -s    # real AI, the whole revise loop through the API (~15 calls)
 ```
 
 > The backend refuses texts under 50 words before any AI call, so short tests cost nothing.
@@ -175,10 +177,23 @@ More on the API and the code: [`backend/README.md`](backend/README.md).
 - Local BYOK mode without login
 - Invite-only hosted version: Google sign-in, invite codes, ownership checks, usage log, daily limits, monthly budget, Docker, admin commands
 - Privacy page, account deletion (GDPR), daily database backups
+- Errors vs optional suggestions (strict grading: 7 errors + up to 3 suggestions)
+- 76 reviewed topics in six essay types
+- Final test run (2026-11-25): all fast and live tests pass. The live loop test fixes only what was flagged and resubmits: on the fixture essay it took 5 rounds, found all 15 known errors and never ended early. A corrected essay finishes, instructions hidden in the essay are ignored, an off-topic essay is flagged. Docker image builds and starts.
 
-### Next
+### Next (the only step left for the semester project)
 
-- Run it on the home server with an own domain, with an off-server copy of the backups
+Deploy on the home server with an own domain, following [`deploy/README.md`](deploy/README.md):
+
+1. Buy the domain and add it to Cloudflare.
+2. Google sign-in: add the production URL to the OAuth client.
+3. On the server: `backend/.env` (key, `GOOGLE_CLIENT_ID`, `ADMIN_EMAILS`, `PRIVACY_CONTACT`, limits), the shared `web` network and Cloudflare tunnel, then `docker compose -f docker-compose.yml -f docker-compose.server.yml up -d --build`.
+4. Set a spend limit in the Anthropic Console as a second line of defence behind `MONTHLY_BUDGET_USD`.
+5. Set up an off-server copy of the backups.
+6. Sign in as admin, create invite codes, and test the whole flow once on the real domain.
+
+After that:
+
 - **Cheaper model for public users** (e.g. Claude Haiku 5.5), only after it passes the fixture tests
 
 ### Planned
