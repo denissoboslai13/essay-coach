@@ -217,3 +217,23 @@ def test_too_long_text_is_rejected(client):
     essay_id = create_essay(client)
     r = client.post(f"/essays/{essay_id}/revisions", json={"text": "a" * 20_001})
     assert r.status_code == 413
+
+
+def test_topics_come_from_different_essay_types():
+    from app.topics import HARDER_GROUPS, NORMAL_GROUPS, pick_topics
+
+    for groups, harder in ((NORMAL_GROUPS, False), (HARDER_GROUPS, True)):
+        type_of = {t: kind for kind, topics in groups.items() for t in topics}
+        for _ in range(20):
+            picked = pick_topics(harder)
+            assert len(set(picked)) == 3
+            assert len({type_of[t] for t in picked}) == 3
+
+
+def test_topics_fill_up_when_few_types_are_left():
+    from app.topics import NORMAL_GROUPS, NORMAL_TOPICS, pick_topics
+
+    # Everything finished except the report topics: still three topics offered
+    exclude = set(NORMAL_TOPICS) - set(NORMAL_GROUPS["report"])
+    picked = pick_topics(False, exclude=exclude)
+    assert len(set(picked)) == 3 and set(picked) <= set(NORMAL_GROUPS["report"])

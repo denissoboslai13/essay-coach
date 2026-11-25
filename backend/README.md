@@ -29,6 +29,7 @@ Interactive API docs: http://localhost:8000/docs
 ```powershell
 pytest                       # fast tests with a fake AI, no key needed
 pytest tests/test_live.py -s # real AI on the fixture essay (needs key, costs a few calls)
+pytest tests/test_live_loop.py -s  # real AI, whole revise loop through the API (~15 calls)
 ```
 
 ## Layout
